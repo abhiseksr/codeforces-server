@@ -139,7 +139,9 @@ router.get('/contest/enter/:contestID', authenticateToken, updateLastActive, asy
     try{
         const {contestID} = req.params;
         const contest = await Contest.findById(contestID);
-        res.json(contest);
+        if (contest.startsAt<=Date.now())
+        return res.json(contest);
+        res.send("contest not started yet");
     }
     catch(err){
         console.log(err);
