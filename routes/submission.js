@@ -139,7 +139,7 @@ router.post('/submission/:problemId/verdict', authenticateToken, updateLastActiv
             language
         } = req.body;
         const problem = await Problem.findById(problemId);
-        const token = await judge(solution, language, problem.expectedOutput, problem.tests, problem.timeLimit, problem.spaceLimit);
+        const token = await judge(solution, language, problem.sampleOutput, problem.sampleInput, problem.timeLimit, problem.spaceLimit);
         const verdict = await verdicts(token);
         return res.json(verdict);
     }
