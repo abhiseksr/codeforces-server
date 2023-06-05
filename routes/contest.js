@@ -182,7 +182,7 @@ router.get('/contest/:contestID/announcement', updateLastActive, async(req,res)=
     try{
         const {contestID} = req.params;
         const contest = await Contest.findById(contestID);
-        res.json({announcement: contest.announcement});
+        res.json(contest);
     }
     catch(err){
         console.log(err);

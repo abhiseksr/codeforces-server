@@ -22,6 +22,25 @@ const messageSchema = Schema({
     },
 })
 
+const commentSchema = Schema({
+    comment: {
+        type: String,
+        minlength: 1
+    },
+    author : {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    time: {
+        type: Date,
+        default: Date.now
+    },
+    contestId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Contest'
+    }
+})
+
 const userSchema = Schema({
     name: {
         type: String
@@ -104,6 +123,7 @@ const userSchema = Schema({
             type: mongoose.Schema.Types.Mixed
         }
     ],
+    comments: [commentSchema],
     online: {
         type: Boolean,
         default: true

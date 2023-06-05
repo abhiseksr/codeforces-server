@@ -5,6 +5,7 @@ const User = require('../models/user');
 const Contest = require('../models/contest');
 const Problem = require('../models/problem');
 const axios = require('axios');
+const mongoose = require('mongoose');
 const {
     authenticateToken
 } = require('./auth');
@@ -29,7 +30,9 @@ router.post('/message/:username', authenticateToken, updateLastActive, async(req
         const {message} = req.body;
         const user = await User.findOne({username: req.user.username});
         const user2 = await User.findOne({username});
-        const msgObj = {message, author: user._id, recipient: user2._id};
+        if (!user2) return res.send(`${username} doesn't exist`);
+        const objectId = new mongoose.Types.ObjectId()
+        const msgObj = {message, author: user._id, recipient: user2._id, _id: objectId};
         user.messages.push(msgObj);
         user2.messages.push(msgObj);
         await user.save();

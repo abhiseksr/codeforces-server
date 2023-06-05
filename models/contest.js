@@ -4,7 +4,7 @@ const Problem = require("./problem");
 const {Schema} = mongoose;
 
 const commentSchema = Schema({
-    content: {
+    comment: {
         type: String,
         minlength: 1
     },
@@ -16,6 +16,12 @@ const commentSchema = Schema({
         type: Date,
         default: Date.now
     },
+    upvotes: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        }
+    ]
 })
 
 const contestSchema = Schema({

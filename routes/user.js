@@ -157,4 +157,18 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res)=>{
     }
 })
 
+// #################################UNCHECKED
+
+router.get('/comments/:username', authenticateToken, updateLastActive, async(req, res)=>{
+    try{
+        const {username} = req.params;
+        const user = await User.findOne({username});
+        if (!user) return res.send('user not found');
+        res.json({comments: user.comments});
+    }
+    catch(err){
+        console.log(err);
+    }
+})
+
 module.exports = {userRouter: router, updateOnlineStatus, runInterval, updateLastActive};
