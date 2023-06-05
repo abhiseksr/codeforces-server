@@ -4,7 +4,7 @@ const Problem = require("./problem");
 const {Schema} = mongoose;
 
 const messageSchema = Schema({
-    content: {
+    message: {
         type: String,
         minlength: 1
     },

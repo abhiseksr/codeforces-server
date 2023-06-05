@@ -129,6 +129,25 @@ router.post('/submission/:problemId', authenticateToken, updateLastActive, async
     }
 })
 
+router.post('/submission/:problemId/verdict', authenticateToken, updateLastActive, async (req, res)=>{
+    try{
+        const {
+            problemId
+        } = req.params;
+        const {
+            solution,
+            language
+        } = req.body;
+        const problem = await Problem.findById(problemId);
+        const token = await judge(solution, language, problem.expectedOutput, problem.tests, problem.timeLimit, problem.spaceLimit);
+        const verdict = await verdicts(token);
+        return res.json(verdict);
+    }
+    catch(err){
+        console.log(err);
+    }
+})
+
 module.exports = {
     submissionRouter: router
 };

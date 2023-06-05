@@ -6,6 +6,7 @@ const {authRouter, authenticateToken} = require('./routes/auth');
 const {contestRouter} = require("./routes/contest");
 const {problemRouter} = require("./routes/problem");
 const {submissionRouter} = require("./routes/submission");
+const {messageRouter} = require("./routes/message");
 const {userRouter, runInterval, updateLastActive} = require('./routes/user');
 const mongoose = require('mongoose');
 const User = require('./models/user');
@@ -28,6 +29,7 @@ app.use('/api', userRouter);
 app.use('/api', contestRouter);
 app.use('/api', problemRouter);
 app.use('/api', submissionRouter);
+app.use('/api', messageRouter);
 
 app.get('/api/dummy', authenticateToken, updateLastActive , (req,res)=>{
     res.json({'message': 'hello'});

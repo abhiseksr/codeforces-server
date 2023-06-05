@@ -103,9 +103,9 @@ router.post('/passwordRecovery', async(req, res)=>{
         const accessToken = jwt.sign({username: user.username, email: user.email, accountType: user.accountType}, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
         const info = await transporter.sendMail({
             from: 'abhishekkumartbbt@gmail.com',
-            to: 'abhishekk.it.20@gmail.com',
+            to: email,
             subject: 'Password Recovery',
-            html: `<p>Click the link below for password recovery:</p><a href="https://localhost:3000/api/updatePassword/${user._id}/${accessToken}">NerdNexus</a>`
+            html: `<p>Click the link below for password recovery:</p><a href="https://localhost:3000/api/updatePassword/${user._id}/${accessToken}">codeforces</a>`
         });
         console.log('Email sent:', info.response);
         res.send('successfully send mail');

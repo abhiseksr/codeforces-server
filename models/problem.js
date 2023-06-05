@@ -35,6 +35,8 @@ const problemSchema = Schema({
         default: 256
     },
     expectedOutput: String,
+    sampleInput: String,
+    sampleOutput: String,
     authorID: {
         type: Schema.Types.ObjectId,
         ref: 'User'
@@ -65,7 +67,7 @@ const problemSchema = Schema({
     difficulty: {
         type: Number,
     },
-    points: {
+    scores: {
         type: Number,
         required: [true, 'Maximum points for the problem is required']
     },

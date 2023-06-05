@@ -5,6 +5,7 @@ const Contest = require('../models/contest');
 const Problem = require('../models/problem');
 const {authenticateToken} = require('./auth');
 const { updateLastActive } = require('./user');
+const auth = require('./auth');
 
 const checkAccountType = async function(req, res, next){
     try{
@@ -93,7 +94,7 @@ router.post('/contest/:contestID/problem', authenticateToken, updateLastActive, 
         problem.authorID = user._id;
         problem.contestID = contestID;
         await problem.save();
-        contest.problems.push(contest._id);
+        contest.problems.push(problem._id);
         await contest.save();
         res.send('problem added successfully');
     }
@@ -201,6 +202,55 @@ router.put('/contest/:contestID/announcement', authenticateToken, updateLastActi
         console.log(err);
     }
 })
-//################################################## UNCHECKED
 
+
+router.get('/contest/:contestID/upvote', authenticateToken, updateLastActive, async(req, res)=>{
+    try{
+        const {contestID} = req.params;
+        const contest = await Contest.findById(contestID);
+        const user = await User.findOne({username: req.user.username});
+        if (contest.upvotes.includes(user._id)) return res.send("already upvoted");
+        contest.upvotes.push(user._id);
+        await contest.save();
+        return res.send("upvoted");
+    }
+    catch(err){
+        console.log(err);
+    }
+});
+
+router.get('/contest/:contestID/standings', authenticateToken, updateLastActive, async(req, res)=>{
+    try{
+        const {contestID} = req.params;
+        const contest = await Contest.findById(contestID);
+        let standings = [];
+        const leaderBoard = contest.leaderBoard;
+        for (let user of leaderBoard){
+            const usr = await User.findById(user.participant);
+            let obj = {acceptedCount: 0, points: 0, username: usr.username, userId: user.participant};
+            for (let submission of user.submissions){
+                const problem = await Problem.findById(submission.problemId);
+                console.log(problem);
+                if (submission.status.id==3){
+                    obj.acceptedCount = obj.acceptedCount + 1;
+                    console.log(problem.scores, Date.now()-contest.startsAt, problem.scoreDecreaseRate, submission.created_at);
+                    obj.points = obj.points + Math.max(300, problem.scores-((new Date(submission.created_at).getTime()-contest.startsAt.getTime())/60000)*problem.scoreDecreaseRate);
+                }
+            }
+            standings.push(obj);
+        }
+        console.log(standings);
+        standings.sort((a,b)=>{
+            if (a.acceptedCount==b.acceptedCount) return b.points - a.points;
+            return b.acceptedCount - a.acceptedCount;
+        })
+        console.log(standings);
+        res.json({standing: standings});
+    }
+    catch(err){
+        console.log(err);
+    }
+})
+
+//################################################## UNCHECKED
 module.exports = {contestRouter: router, checkAccountType};
