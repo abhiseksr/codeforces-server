@@ -34,9 +34,22 @@ const problemSchema = Schema({
         type: Number,
         default: 256
     },
-    expectedOutput: String,
-    sampleInput: String,
-    sampleOutput: String,
+    expectedOutput: {
+        type: String,
+        required: [true, "expectedOutput is required"]
+    },
+    sampleOutput: {
+        type: String,
+        required: [true, "sampleOutput is required"]
+    },
+    sampleInput: {
+        type: String,
+        required: [true, "sampleInput is required"]
+    },
+    tests: {
+        type: String,
+        required: [true, "tests is required"]
+    },
     authorID: {
         type: Schema.Types.ObjectId,
         ref: 'User'
@@ -54,15 +67,13 @@ const problemSchema = Schema({
     notes: {
         type: String,
     },
-    tests: {
-        type: String,
-    },
     contestID: {
         type: Schema.Types.ObjectId,
         ref: 'Contest'
     },
     scoreDecreaseRate:{
         type: Number, // per minute
+        required: [true, "scoreDecreaseRate is required"]
     },
     difficulty: {
         type: Number,
