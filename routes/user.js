@@ -91,9 +91,24 @@ router.get('/submissions/:username', async(req, res)=>{
 router.get('/contests/:username', async(req, res)=>{
     try{
         const {username} = req.params;
-        const user = await User.findOne({username}).populate('contests');
+        const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
-        res.json({contests: user.contests});
+        let response = [];
+        for (let contestID of user.contests){
+            const contest = await Contest.findById(contestID);
+            console.log(contest);
+            for (let usr of contest.leaderBoard){
+                if (String(usr.participant)==String(user._id)){
+                    let acceptedCount = 0;
+                    for (let submission of usr.submissions)
+                    if (submission.status.id==3) acceptedCount = acceptedCount + 1;
+
+                    response.push({name: contest.name, contestId: contestID, acceptedCount});
+                }
+            }
+        }
+        // console.log(response[0].name);
+        res.json({contests: response});
     }
     catch(err){
         console.log(err);
