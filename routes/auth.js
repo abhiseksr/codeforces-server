@@ -12,7 +12,7 @@ router.use(express.json());
 router.use(cookieParser());
 
 function authenticateToken(req, res, next) {
-    console.log(req.cookies);
+    // console.log(req.cookies);
     // res.send('hi');
     const {accessToken: token} = req.cookies;
     if (token == null) return res.sendStatus(401)
@@ -37,7 +37,7 @@ async function getHashedPassword(password){
 
 router.post('/register',async (req,res)=>{
     try{
-        console.log(req.body);
+        // console.log(req.body);
         const {username, password, email, accountType = 'contestant'} = req.body;
         const user = new User({username, password: await getHashedPassword(password), email, accountType});
         await user.save();
@@ -90,7 +90,7 @@ router.get('/logout', async (req, res)=>{
 
 router.post('/passwordRecovery', async(req, res)=>{
     try{
-        console.log(req.body);
+        // console.log(req.body);
         const {username,email} = req.body;
         const user = await User.findOne({email,username});
         const transporter = nodemailer.createTransport({

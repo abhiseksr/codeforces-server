@@ -29,9 +29,9 @@ const runInterval = ()=>{
 
 const updateOnlineStatus = async function(){
     try{
-        console.log('in updateOnlineStatus');
-        await Contest.updateMany({$and: [{startsAt: {$lte: Date.now()}}, {endsAt: {$gte: Date.now()}}]}, {$set: {running: true}}); 
-        await Contest.updateMany({$or: [{startsAt: {$gt: Date.now()}}, {endsAt: {$lt: Date.now()}}]}, {$set: {running: false}}); 
+        // console.log('in updateOnlineStatus');
+        // await Contest.updateMany({$and: [{startsAt: {$lte: Date.now()}}, {endsAt: {$gte: Date.now()}}]}, {$set: {running: true}}); 
+        // await Contest.updateMany({$or: [{startsAt: {$gt: Date.now()}}, {endsAt: {$lt: Date.now()}}]}, {$set: {running: false}}); 
         await User.updateMany(
             {lastActive: {$lt : Date.now()-5*60*1000}},
             {$set: {online: false}}
@@ -55,9 +55,11 @@ router.get('/profile/:username', async (req, res)=>{
         const {username} = req.params;
         const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
-        console.log(user);
+        const loggedUser = await User.findOne({username: req.user.username});
+        // console.log(user);
+        const {seenNotificationsCount} = loggedUser;
         const {name, email, accountType, country, city, organisation, birthDate, followers, online} = user;
-        res.json({name, username, email, accountType, country, city, organisation, birthDate, followers: followers.length, online});
+        res.json({name, username, email, accountType, country, city, organisation, birthDate, followers: followers.length, online, unseenNotificationsCount: loggedUser.messages.length-seenNotificationsCount});
     }
     catch(err){
         console.log(err);
@@ -88,15 +90,15 @@ router.get('/submissions/:username', async(req, res)=>{
     }
 })
 
-router.get('/contests/:username', async(req, res)=>{
+router.get('/contests', async(req, res)=>{
     try{
-        const {username} = req.params;
+        const {username} = req.query;
         const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
         let response = [];
         for (let contestID of user.contests){
             const contest = await Contest.findById(contestID);
-            console.log(contest);
+            // console.log(contest);
             for (let usr of contest.leaderBoard){
                 if (String(usr.participant)==String(user._id)){
                     let acceptedCount = 0;

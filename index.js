@@ -9,6 +9,8 @@ const {submissionRouter} = require("./routes/submission");
 const {messageRouter} = require("./routes/message");
 const {commentRouter} = require("./routes/comment");
 const {userRouter, runInterval, updateLastActive} = require('./routes/user');
+const methodOverride = require("method-override");
+const cors = require("cors");
 const mongoose = require('mongoose');
 const User = require('./models/user');
 
@@ -32,6 +34,8 @@ app.use('/api', problemRouter);
 app.use('/api', submissionRouter);
 app.use('/api', messageRouter);
 app.use('/api', commentRouter);
+app.use(cors());
+app.use(methodOverride('_method'));
 
 app.get('/api/dummy', authenticateToken, updateLastActive , (req,res)=>{
     res.json({'message': 'hello'});

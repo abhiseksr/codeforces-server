@@ -31,7 +31,7 @@ router.post('/contest', authenticateToken, updateLastActive, checkAccountType, a
         let tempAuthors = [];
         for (let author of authors) {
             const user = await User.findOne({username: author});
-            console.log(author);
+            // console.log(author);
             if (user.accountType=='organiser')
             tempAuthors.push(user._id);
         };
@@ -44,6 +44,14 @@ router.post('/contest', authenticateToken, updateLastActive, checkAccountType, a
         // console.log(contest.createdAt);
         // console.log(req.body);
         contest.endsAt = contest.startsAt.getTime() + contest.duration*60*1000;
+        setTimeout(async () => {
+            contest.running = true;
+            await contest.save();
+        }, contest.startsAt-Date.now());
+        setTimeout(async () => {
+            contest.running = false;
+            await contest.save();
+        }, contest.endsAt-Date.now());
         await contest.save();
         // console.log(contest);
         for (let author of authors) {
@@ -230,21 +238,21 @@ router.get('/contest/:contestID/standings', authenticateToken, updateLastActive,
             let obj = {acceptedCount: 0, points: 0, username: usr.username, userId: user.participant};
             for (let submission of user.submissions){
                 const problem = await Problem.findById(submission.problemId);
-                console.log(problem);
+                // console.log(problem);
                 if (submission.status.id==3){
                     obj.acceptedCount = obj.acceptedCount + 1;
-                    console.log(problem.scores, Date.now()-contest.startsAt, problem.scoreDecreaseRate, submission.created_at);
+                    // console.log(problem.scores, Date.now()-contest.startsAt, problem.scoreDecreaseRate, submission.created_at);
                     obj.points = obj.points + Math.max(300, problem.scores-((new Date(submission.created_at).getTime()-contest.startsAt.getTime())/60000)*problem.scoreDecreaseRate);
                 }
             }
             standings.push(obj);
         }
-        console.log(standings);
+        // console.log(standings);
         standings.sort((a,b)=>{
             if (a.acceptedCount==b.acceptedCount) return b.points - a.points;
             return b.acceptedCount - a.acceptedCount;
         })
-        console.log(standings);
+        // console.log(standings);
         res.json({standing: standings});
     }
     catch(err){

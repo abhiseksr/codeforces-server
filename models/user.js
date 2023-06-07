@@ -100,6 +100,10 @@ const userSchema = Schema({
         default: Date.now
     },
     messages: [messageSchema],
+    seenNotificationsCount: {
+        type: Number,
+        default : 0
+    },
     favourites: [
         {
             type: Schema.Types.ObjectId,

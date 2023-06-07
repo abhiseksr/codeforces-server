@@ -50,7 +50,7 @@ const judge = async function (solution, language, expectedOutput, tests, timeLim
 
     try {
         const response = await axios.request(options);
-        console.log(response.data);
+        // console.log(response.data);
         return response.data.token;
     } catch (error) {
         console.error(error);
@@ -73,7 +73,7 @@ const verdicts = async function (token) {
 
     try {
         const response = await axios.request(options);
-        console.log(response.data);
+        // console.log(response.data);
         return response.data;
     } catch (error) {
         console.error(error);

@@ -47,6 +47,8 @@ router.post('/message/:username', authenticateToken, updateLastActive, async(req
 router.get('/talks', authenticateToken, updateLastActive, async(req, res)=>{
     try{
         const user = await User.findOne({username: req.user.username});
+        user.seenNotificationsCount = user.messages.length;
+        await user.save();
         res.json({messages: user.messages});
     }   
     catch(err){
