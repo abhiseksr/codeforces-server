@@ -17,6 +17,7 @@ const {
 const {
     verify
 } = require('jsonwebtoken');
+const AppError = require('./AppError');
 
 router.use(express.urlencoded({
     extended: true
@@ -25,7 +26,7 @@ router.use(express.json());
 
 
 
-router.post('/contest/:contestId/comment', authenticateToken, updateLastActive, async(req, res)=>{
+router.post('/contest/:contestId/comment', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
         const {contestId} = req.params;
         const {comment} = req.body;
@@ -39,15 +40,16 @@ router.post('/contest/:contestId/comment', authenticateToken, updateLastActive, 
         res.send(`${user.username} commented`);
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.get('/contest/:contestId/comment/:commentId/upvote', authenticateToken, updateLastActive, async(req, res)=>{
+router.get('/contest/:contestId/comment/:commentId/upvote', authenticateToken, updateLastActive, async(req, res,next)=>{
     try{
         const {contestId, commentId} = req.params;
         const contest = await Contest.findById(contestId);
         const user = await User.findOne({username: req.user.username});
+        // throw new AppError("helloerror", 403);   
         contest.comments.forEach(comment=>{
             if (String(comment._id)==String(commentId)){
                 if (!comment.upvotes.includes(user._id)) {
@@ -59,7 +61,7 @@ router.get('/contest/:contestId/comment/:commentId/upvote', authenticateToken, u
         res.send('upvoted');
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 

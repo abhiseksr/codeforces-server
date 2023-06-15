@@ -29,7 +29,6 @@ const judge = async function (solution, language, expectedOutput, tests, timeLim
         method: 'POST',
         url: 'https://judge0-ce.p.rapidapi.com/submissions',
         params: {
-            base64_encoded: 'true',
             fields: '*'
         },
         headers: {
@@ -40,9 +39,9 @@ const judge = async function (solution, language, expectedOutput, tests, timeLim
         },
         data: {
             language_id: language,
-            source_code: Buffer.from(solution).toString('base64'),
-            stdin: Buffer.from(tests).toString('base64'),
-            expected_output: Buffer.from(expectedOutput).toString('base64'),
+            source_code: solution,
+            stdin: tests,
+            expected_output: expectedOutput,
             cpu_time_limit: timeLimit / 1000,
             memory_limit: 1024 * spaceLimit,
         }
@@ -62,7 +61,7 @@ const verdicts = async function (token) {
         method: 'GET',
         url: `https://judge0-ce.p.rapidapi.com/submissions/${token}`,
         params: {
-            base64_encoded: 'true',
+            // base64_encoded: 'true',
             fields: '*'
         },
         headers: {
@@ -80,7 +79,7 @@ const verdicts = async function (token) {
     }
 }
 
-router.post('/submission/:problemId', authenticateToken, updateLastActive, async (req, res) => {
+router.post('/submission/:problemId', authenticateToken, updateLastActive, async (req, res,next) => {
     try {
         const {
             problemId
@@ -89,6 +88,7 @@ router.post('/submission/:problemId', authenticateToken, updateLastActive, async
             solution,
             language
         } = req.body;
+        // console.log(solution, language);
         const problem = await Problem.findById(problemId);
         const token = await judge(solution, language, problem.expectedOutput, problem.tests, problem.timeLimit, problem.spaceLimit);
         const verdict = await verdicts(token);
@@ -100,7 +100,7 @@ router.post('/submission/:problemId', authenticateToken, updateLastActive, async
         // submit only running is true
         // console.log('hi');
         const contest = await Contest.findById(problem.contestID);
-        if (contest.registrations.includes(user._id) && contest.running){
+        if (contest.registrations.includes(user._id) && contest.startsAt<=Date.now() && contest.endsAt>=Date.now()){
             let isProblemAlreadyAccepted = false;
             isProblemAlreadyAccepted = user.submissions.some((element) => {
                 // return false;
@@ -125,28 +125,48 @@ router.post('/submission/:problemId', authenticateToken, updateLastActive, async
         res.json(verdict);
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.post('/submission/:problemId/verdict', authenticateToken, updateLastActive, async (req, res)=>{
-    try{
-        const {
-            problemId
-        } = req.params;
-        const {
-            solution,
-            language
-        } = req.body;
-        const problem = await Problem.findById(problemId);
-        const token = await judge(solution, language, problem.sampleOutput, problem.sampleInput, problem.timeLimit, problem.spaceLimit);
-        const verdict = await verdicts(token);
-        return res.json(verdict);
+router.get('/submissions/:username', authenticateToken, updateLastActive, async (req, res,next) => {
+    try {
+        // console.log("in submissons");
+        const {username} = req.params;
+        const user = await User.findOne({username});
+        let problems = [];
+        for (let submission of user.submissions){
+            const problem = await Problem.findById(submission.problemId);
+            problems.push(problem);
+        }
+        let verdicts = user.submissions;
+        verdicts.reverse();
+        problems.reverse();
+        res.json({problems, verdicts});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
+
+// router.post('/submission/:problemId/verdict', authenticateToken, updateLastActive, async (req, res)=>{
+//     try{
+//         const {
+//             problemId
+//         } = req.params;
+//         const {
+//             solution,
+//             language
+//         } = req.body;
+//         const problem = await Problem.findById(problemId);
+//         const token = await judge(solution, language, problem.sampleOutput, problem.sampleInput, problem.timeLimit, problem.spaceLimit);
+//         const verdict = await verdicts(token);
+//         return res.json(verdict);
+//     }
+//     catch(err){
+//         console.log(err);
+//     }
+// })
 
 module.exports = {
     submissionRouter: router

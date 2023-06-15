@@ -50,8 +50,14 @@ const contestSchema = Schema({
             ref: 'Problem'
         }
     ],
-    editorial: {type: String},
-    announcement: {type: String},
+    editorial: {
+        type: String,
+        default: ""
+    },
+    announcement: {
+        type: String,
+        default: ""
+    },
     startsAt: {
         type: Date,
         required: [true, 'Date and time of contest is required']
@@ -59,10 +65,10 @@ const contestSchema = Schema({
     endsAt: {
         type: Date,
     },
-    running: {
-        type: Boolean,
-        default: false
-    },
+    // running: {
+    //     type: Boolean,
+    //     default: false
+    // },
     duration: {
         type: Number, //  in minutes
         required: [true, 'Duration of contest is required']

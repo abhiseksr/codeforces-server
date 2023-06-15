@@ -4,6 +4,8 @@ const User = require('../models/user');
 const Contest = require('../models/contest');
 const Problem = require('../models/problem');
 const {authenticateToken} = require('./auth');
+const AppError = require('./AppError');
+const auth = require('./auth');
 
 const updateLastActive = async function (req, res, next){
     try{
@@ -15,7 +17,7 @@ const updateLastActive = async function (req, res, next){
         return next();
     }
     catch(err){
-        console.log(err, "this is updateLastActive function");
+        return next(err);
     }
 }
 
@@ -50,49 +52,70 @@ router.use(express.urlencoded({extended: true}));
 router.use(express.json());
 
 
-router.get('/profile/:username', async (req, res)=>{
+router.get("/profile/liveUser", authenticateToken, updateLastActive, async(req, res, next)=>{
+    try{    
+        const {username} = req.user;
+        // console.log("helelelel");
+        const user = await User.findOne({username});
+        res.json({liveUser: user.username, unseenNotifications: user.messages.length-user.seenNotificationsCount, accountType: user.accountType});
+    }   
+    catch(err){
+        return next(err);
+    }
+})
+router.get('/profile/:username', authenticateToken, updateLastActive, async (req, res,next)=>{
     try{
         const {username} = req.params;
         const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
-        const loggedUser = await User.findOne({username: req.user.username});
-        // console.log(user);
-        const {seenNotificationsCount} = loggedUser;
-        const {name, email, accountType, country, city, organisation, birthDate, followers, online} = user;
-        res.json({name, username, email, accountType, country, city, organisation, birthDate, followers: followers.length, online, unseenNotificationsCount: loggedUser.messages.length-seenNotificationsCount});
+        let liveUser = req.user.username;
+        let accountType2 = await User.findOne({username: liveUser}).accountType;
+        const {name, email, accountType, country, city, registeredAt, lastActive, organisation, birthDate, followers, following, online} = user;
+        res.json({liveUser, name, username, email, accountType, accountType2, registeredAt, lastActive, friends: following.length, country, city, organisation, birthDate, followers: followers.length, online});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.get('/friends', authenticateToken, updateLastActive, async (req, res)=>{
+
+router.get('/friends', authenticateToken, updateLastActive, async (req, res,next)=>{
     try{
         const {username} = req.user;
-        const user = await User.findOne({username});
+        const user = await User.findOne({username}).populate("following");
         if (!user) throw new Error('user not logged in');
         res.json({following: user.following});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.get('/submissions/:username', async(req, res)=>{
+router.get('/profile/:username/addFriend', authenticateToken, updateLastActive, async(req,res,next)=>{
     try{
-        const {username} = req.params;
-        const user = await User.findOne({username}).populate('submissions');
-        if (!user) throw new Error('user does not exist');
-        res.json({submissions: user.submissions});
+        const {username: username1} = req.user;
+        const {username: username2} = req.params;
+        const user1 = await User.findOne({username: username1});
+        const user2 = await User.findOne({username: username2})
+        user1.following.push(user2);
+        user2.followers.push(user1);
+        if (!user1.following.includes(user2) && user1.username!==user2.username){
+            await user1.save();
+            await user2.save();
+        }
+        else{
+            throw new AppError("user already in friend or you can't friend yourself", 403);
+        }
+        res.send("added to friend list");
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.get('/contests', async(req, res)=>{
+router.get('/contests', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
-        const {username} = req.query;
+        const {username} = req.user;
         const user = await User.findOne({username});
         if (!user) throw new Error('user does not exist');
         let response = [];
@@ -113,11 +136,11 @@ router.get('/contests', async(req, res)=>{
         res.json({contests: response});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.get('/favourites', authenticateToken, updateLastActive, async(req, res)=>{
+router.get('/favourites', authenticateToken, updateLastActive, async(req, res ,next)=>{
     try{
         const {username} = req.user;
         if (!username) throw new Error('user not logged in');
@@ -126,11 +149,26 @@ router.get('/favourites', authenticateToken, updateLastActive, async(req, res)=>
         res.json({favourites: user.favourites});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.get('/settings', authenticateToken, updateLastActive, async(req,res)=>{
+router.get('/', authenticateToken, updateLastActive, async(req, res, next)=>{
+    try{
+        const contests = await Contest.find({endsAt: {$gt: Date.now()}}).sort({startsAt: 1});
+        let response = [];
+        for (let contest of contests){
+            let {name, number, announcement, _id, upvotes, comments, startsAt} = contest;
+            response.push({name, number, announcement, _id, upvotes: upvotes.length, comments: comments.length, startsAt});
+        }
+        res.json({contests: response});
+    }
+    catch(err){
+        return  next(err);
+    }
+})
+
+router.get('/settings', authenticateToken, updateLastActive, async(req,res,next)=>{
     try{
         const {username} = req.user;
         if (!username) throw new Error('user not logged in');
@@ -140,11 +178,11 @@ router.get('/settings', authenticateToken, updateLastActive, async(req,res)=>{
         res.json({name, city, organisation, country, birthDate});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
-router.put('/settings', authenticateToken, updateLastActive, async(req, res)=>{
+router.put('/settings', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
         const {username} = req.user;
         const {name, city, organisation, country, birthDate} = req.body;
@@ -155,13 +193,13 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res)=>{
         res.json({'status': 'successfully updated settings'});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 
 // #################################UNCHECKED
 
-router.get('/comments/:username', authenticateToken, updateLastActive, async(req, res)=>{
+router.get('/comments/:username', authenticateToken, updateLastActive, async(req, res,next)=>{
     try{
         const {username} = req.params;
         const user = await User.findOne({username});
@@ -169,7 +207,7 @@ router.get('/comments/:username', authenticateToken, updateLastActive, async(req
         res.json({comments: user.comments});
     }
     catch(err){
-        console.log(err);
+        return next(err);
     }
 })
 

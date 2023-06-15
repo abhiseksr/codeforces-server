@@ -14,6 +14,15 @@ const cors = require("cors");
 const mongoose = require('mongoose');
 const User = require('./models/user');
 
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000'); // Replace with your React client's domain and port
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true'); // If you need to include cookies in cross-origin requests
+  
+    next();
+  });
+// app.use(cors());
 mongoose.connect('mongodb://localhost:27017/codeforces',{
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -24,7 +33,7 @@ mongoose.connect('mongodb://localhost:27017/codeforces',{
 })  
 .catch((err)=>{
     console.log("ERROR! NO DATABASE CONNECTION");
-    console.log(err);
+    next(err);
 })
 
 app.use('/api', authRouter);
@@ -34,11 +43,13 @@ app.use('/api', problemRouter);
 app.use('/api', submissionRouter);
 app.use('/api', messageRouter);
 app.use('/api', commentRouter);
-app.use(cors());
 app.use(methodOverride('_method'));
 
-app.get('/api/dummy', authenticateToken, updateLastActive , (req,res)=>{
-    res.json({'message': 'hello'});
+
+app.use((err, req, res, next)=>{
+    // console.log("hello");
+    const {status = 500, message="something went wrong"} = err;
+    res.status(status).send(message);
 })
 
 const PORT = process.env.PORT || 4000;

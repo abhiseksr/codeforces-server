@@ -135,6 +135,10 @@ const userSchema = Schema({
     lastActive: {
         type: Date,
         default: Date.now
+    },
+    registeredAt: {
+        type: Date,
+        default: Date.now
     }
 })
 

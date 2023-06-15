@@ -8,7 +8,8 @@ const tagSchema = Schema({
     enum: ['greedy', 'dp', 'trees', 'graphs', 'number theory',
     'maths', 'brute force', 'implementation', 'backtracking', 'dsu',
     'data structures', 'binary search', 'combinatorics', 'sortings',
-    'strings', 'two pointers', 'bitmasks', 'probabilities']
+    'strings', 'two pointers', 'bitmasks', 'probabilities'],
+    default: []
 })
 
 const solutionSchema = Schema({
