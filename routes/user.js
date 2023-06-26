@@ -78,6 +78,28 @@ router.get('/profile/:username', authenticateToken, updateLastActive, async (req
     }
 })
 
+router.get('/multisearch/:query', authenticateToken, updateLastActive, async(req, res, next)=>{
+    try{
+        const {query} = req.params;
+        let list = [];
+        const users = await User.find({username: {$regex: query, $options: 'i'}});
+        for (let user of users){
+            list.push({type: 'User', title: user.username, id: user._id});
+        }
+        const contests = await Contest.find({name: {$regex: query, $options: 'i'}});
+        for (let contest of contests){
+            list.push({type: 'Contest', title: `${contest.name} #${contest.number}`, id: contest._id});
+        }
+        const problems = await Problem.find({name: {$regex: query, $options: 'i'}});
+        for (let problem of problems){
+            list.push({type: 'Problem', title: `${problem.code}. ${problem.name}`, id: problem._id});
+        }
+        res.json({list});
+    }
+    catch(err){
+        return next(err);
+    }
+})
 
 router.get('/friends', authenticateToken, updateLastActive, async (req, res,next)=>{
     try{

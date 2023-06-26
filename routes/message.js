@@ -63,6 +63,7 @@ router.get('/talks', authenticateToken, updateLastActive, async(req, res, next)=
             tempObj.recipientName = recipient.username;
             messages.push(tempObj);
         }
+        messages.reverse();
         res.json({talks: messages, username: req.user.username});
     }   
     catch(err){
