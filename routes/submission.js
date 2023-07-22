@@ -5,6 +5,7 @@ const User = require('../models/user');
 const Contest = require('../models/contest');
 const Problem = require('../models/problem');
 const axios = require('axios');
+const performPlagiarismCheck = require("./PlagCheck");
 const {
     authenticateToken
 } = require('./auth');
@@ -22,6 +23,10 @@ router.use(express.urlencoded({
     extended: true
 }));
 router.use(express.json());
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
 const judge = async function (solution, language, expectedOutput, tests, timeLimit, spaceLimit) {
 
@@ -52,7 +57,7 @@ const judge = async function (solution, language, expectedOutput, tests, timeLim
         // console.log(response.data);
         return response.data.token;
     } catch (error) {
-        console.error(error);
+        // console.log(error);
     }
 }
 
@@ -75,7 +80,7 @@ const verdicts = async function (token) {
         // console.log(response.data);
         return response.data;
     } catch (error) {
-        console.error(error);
+        // console.error(error);
     }
 }
 
@@ -88,18 +93,30 @@ router.post('/submission/:problemId', authenticateToken, updateLastActive, async
             solution,
             language
         } = req.body;
-        // console.log(solution, language);
+        console.log(req.body);
         const problem = await Problem.findById(problemId);
         const token = await judge(solution, language, problem.expectedOutput, problem.tests, problem.timeLimit, problem.spaceLimit);
-        const verdict = await verdicts(token);
-        // console.log(Buffer.from(verdict.stdout, 'base64').toString('utf8'));
+        await delay(5000);
+        let verdict = await verdicts(token);
+        if (!verdict) verdict  = {created_at: new Date(), status_id: 6, status: {id: 6, description: "Compilation Error"}, language: {id: 53, name: "C++ (GCC 8.3.0)"}};
+        const contest = await Contest.findById(problem.contestID);
         const user = await User.findOne({username: req.user.username});
+        // console.log(Buffer.from(verdict.stdout, 'base64').toString('utf8'));
+        // console.log(token);
+        for (let person of contest.leaderBoard){
+            for (let submission of person.submissions){
+                // console.log(performPlagiarismCheck(solution, submission.source_code));
+                if (person.participant!=user._id && verdict.status.id==3 && performPlagiarismCheck(solution, submission.source_code)>0.8) {
+                    verdict.status.id = -1, verdict.status.description = "Plagiarised", verdict.status_id = -1; 
+                }
+            }
+        }
+        // console.log(verdict);
         if (verdict.status.id==3)
         problem.submissions = problem.submissions + 1;
         await problem.save();
         // submit only running is true
         // console.log('hi');
-        const contest = await Contest.findById(problem.contestID);
         if (contest.registrations.includes(user._id) && contest.startsAt<=Date.now() && contest.endsAt>=Date.now()){
             let isProblemAlreadyAccepted = false;
             isProblemAlreadyAccepted = user.submissions.some((element) => {
@@ -125,6 +142,7 @@ router.post('/submission/:problemId', authenticateToken, updateLastActive, async
         res.json(verdict);
     }
     catch(err){
+        // console.error(err);
         return next(err);
     }
 })
@@ -149,24 +167,6 @@ router.get('/submissions/:username', authenticateToken, updateLastActive, async 
     }
 })
 
-// router.post('/submission/:problemId/verdict', authenticateToken, updateLastActive, async (req, res)=>{
-//     try{
-//         const {
-//             problemId
-//         } = req.params;
-//         const {
-//             solution,
-//             language
-//         } = req.body;
-//         const problem = await Problem.findById(problemId);
-//         const token = await judge(solution, language, problem.sampleOutput, problem.sampleInput, problem.timeLimit, problem.spaceLimit);
-//         const verdict = await verdicts(token);
-//         return res.json(verdict);
-//     }
-//     catch(err){
-//         console.log(err);
-//     }
-// })
 
 module.exports = {
     submissionRouter: router
