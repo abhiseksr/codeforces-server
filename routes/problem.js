@@ -72,7 +72,7 @@ router.get("/problems", authenticateToken, updateLastActive, async(req, res, nex
         // console.log(problems.length);
         for (let problem of problems){
             const populatedProblem = await problem.populate("contestID");
-            if (populatedProblem.contestID.endsAt<Date.now()) response.push(populatedProblem);
+            if (populatedProblem.contestID.startsAt<Date.now()) response.push(populatedProblem);
         }
         res.json({problems: response});
     }

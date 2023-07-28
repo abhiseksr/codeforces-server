@@ -119,9 +119,10 @@ router.get('/profile/:username/addFriend', authenticateToken, updateLastActive, 
         const {username: username2} = req.params;
         const user1 = await User.findOne({username: username1});
         const user2 = await User.findOne({username: username2})
-        user1.following.push(user2);
-        user2.followers.push(user1);
-        if (!user1.following.includes(user2) && user1.username!==user2.username){
+        if (!user1.following.includes(user2._id) && user1.username!==user2.username){
+            console.log(user1, user2);
+            user1.following.push(user2);
+            user2.followers.push(user1);
             await user1.save();
             await user2.save();
         }
@@ -200,6 +201,7 @@ router.get('/settings', authenticateToken, updateLastActive, async(req,res,next)
         res.json({name, city, organisation, country, birthDate});
     }
     catch(err){
+        // console.log(err);
         return next(err);
     }
 })
@@ -207,6 +209,7 @@ router.get('/settings', authenticateToken, updateLastActive, async(req,res,next)
 router.put('/settings', authenticateToken, updateLastActive, async(req, res, next)=>{
     try{
         const {username} = req.user;
+        console.log("hello");
         const {name, city, organisation, country, birthDate} = req.body;
         if (!username) throw new Error('user not logged in');
         const user = await User.findOne({username});
@@ -215,6 +218,7 @@ router.put('/settings', authenticateToken, updateLastActive, async(req, res, nex
         res.json({'status': 'successfully updated settings'});
     }
     catch(err){
+        console.log(err);
         return next(err);
     }
 })
